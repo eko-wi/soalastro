@@ -1,12 +1,73 @@
-<h1>Test</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Kumpulan Soal Astronomi</title>
+</head>
+<body>
+<h1>Kumpulan Soal Astronomi</h1>
 <p>Masukkan kata kunci untuk mencari soal, misalnya: bulan, magnitudo, osk2017.</p>
-(textbox untuk mengisi tags)
-<p>Batas maksimum:</p>
-(textbox untuk mengisi batas maksimum)
-<button onclick=send()>Cari</button>
+<p>
+    <form id="qform">
+        <label for="t">Kata kunci:</label>
+        <input type="text" id="t" name="t"><br><br>
+        <label>
+            <input type="checkbox" id="a" name="a">
+            Mengandung semua kata kunci
+        </label><br>
 
+        <label for="n">Jumlah maksimum:</label>
+        <input type="text" id="n" name="n"><br><br>
+
+        <label>
+            <input type="checkbox" id="P" name="P">
+            Jenis soal PG
+        </label><br><br>
+
+        <label>
+            <input type="checkbox" id="E" name="E">
+            Jenis soal essay
+        </label><br><br>
+        <button type="button" onclick="submitForm(0)">Cari tanpa download</button><br>
+        <button type="button" onclick="submitForm(1)">Cari dan download</button><br><br>
+    <label id="nres"></label><br>
+    <label id="debugstr"></label><br>
+    </form>
+</p>
+</body>
 <script>
-
-
+async function submitForm(d) {
+  const t = document.getElementById('t').value;
+  const n = document.getElementById('n').value;
+  const P = document.getElementById('P').checked;
+  const E = document.getElementById('E').checked;
+  const a = document.getElementById('a').checked;
+  //url test, nanti ganti dengan url deploy
+  if(t.trim()===''){
+    alert("Tags harus diisi.");
+    return;
+  }
+  var url = 'https://script.google.com/a/macros/bpkpenaburjakarta.or.id/s/AKfycbzlnNnHUqUYz0uxH1aImiU1xKyEvxZ5Los3U63OM2Y/dev?tag=' + t;
+  if(+n > 0){
+    url = url + "&n=" + n;
+  }
+  if(d){
+    url = url + "&o=pdf";
+  }
+  if(a){
+    url = url + "&m=all";
+  }
+  document.getElementById('debugstr').innerText=url;
+  const hasil = await fetch(url,{redirect: "follow", method: "GET", headers: {"Content-Type": "text/plain;charset=utf-8"}});
+  if(!hasil.ok){
+    alert("Terjadi error.");
+    return;
+  }
+  const data = await hasil.text();
+  const link = document.createElement('a');
+	link.href = 'data:application/pdf;base64,' + data;
+	link.download = 'Daftarsoal.pdf';
+	link.click();
   
+}
 </script>
