@@ -28,8 +28,8 @@
             <input type="checkbox" id="E" name="E">
             Jenis soal essay
         </label><br><br>
-        <button type="button" onclick="submitForm(0)">Cari tanpa download</button><br>
-        <button type="button" onclick="submitForm(1)">Cari dan download</button><br><br>
+        <button type="button" onclick="submitForm(0)">Cari</button><br>
+        <button type="button" onclick="submitForm(1)">Download</button><br><br>
     <label id="nres"></label><br>
     <label id="debugstr"></label><br>
     </form>
@@ -51,7 +51,7 @@ async function submitForm(d) {
   if(+n > 0){
     url = url + "&n=" + n;
   }
-  if(d){
+  if(d==1){
     url = url + "&o=pdf";
   }
   if(a){
@@ -64,10 +64,14 @@ async function submitForm(d) {
     return;
   }
   const data = await hasil.text();
-  const link = document.createElement('a');
+  if(d==1){
+    const link = document.createElement('a');
 	link.href = 'data:application/pdf;base64,' + data;
 	link.download = 'Daftarsoal.pdf';
 	link.click();
-  
+  }
+  else{
+    document.getElementById('nres').innerText="Terkumpul " + data + " soal.";
+  }
 }
 </script>
