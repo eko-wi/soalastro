@@ -59,6 +59,7 @@ async function submitForm(d) {
   }
   else{
     url = url + "&o=n";
+    document.getElementById('debugstr').innerText="Mencari... harap tunggu beberapa saat.";
   }
   if(a){
     url = url + "&m=all";
@@ -84,6 +85,7 @@ async function submitForm(d) {
     document.getElementById("dbtn").disabled=false;
   }
   else{
+    document.getElementById('debugstr').innerText="";
     document.getElementById('nres').innerText="Terkumpul " + data + " soal.";
   }
 }
