@@ -48,7 +48,7 @@ async function submitForm(d) {
     alert("Tags harus diisi.");
     return;
   }
-  var url = 'https://script.google.com/macros/s/AKfycbxvU4FH8Y6TMXynQtm9dAfNjxsvx5zl3pe2oM2_MWn2wmxcDPC-nDAxOpaNVHaOxqli/exec?tag=' + t;
+  var url = 'https://script.google.com/macros/s/AKfycbxvU4FH8Y6TMXynQtm9dAfNjxsvx5zl3pe2oM2_MWn2wmxcDPC-nDAxOpaNVHaOxqli/exec?tag=' + t.toLowerCase();
   if(d==1){
     document.getElementById('debugstr').innerText="File daftar soal akan bisa didownload dalam beberapa saat. Harap tunggu...";
     document.getElementById('dbtn').disabled=true;
