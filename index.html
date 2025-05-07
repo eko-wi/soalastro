@@ -29,8 +29,12 @@
             Jenis soal essay
         </label><br><br>
         <button type="button" onclick="submitForm(0)">Cari</button><br>
+	<label id="nres"></label><br>
+        <label>
+            <input type="checkbox" id="S" name="S">
+            Menyertakan solusi jika ada
+        </label><br><br>
         <button type="button" onclick="submitForm(1)">Download</button><br><br>
-    <label id="nres"></label><br>
     <label id="debugstr"></label><br>
     </form>
 </p>
@@ -42,17 +46,21 @@ async function submitForm(d) {
   const P = document.getElementById('P').checked;
   const E = document.getElementById('E').checked;
   const a = document.getElementById('a').checked;
+  const S = document.getElementById('S').checked;
   //url test, nanti ganti dengan url deploy
   if(t.trim()===''){
     alert("Tags harus diisi.");
     return;
   }
-  var url = 'https://script.google.com/a/macros/bpkpenaburjakarta.or.id/s/AKfycbzlnNnHUqUYz0uxH1aImiU1xKyEvxZ5Los3U63OM2Y/dev?tag=' + t;
+  var url = 'https://script.google.com/macros/s/AKfycbxvU4FH8Y6TMXynQtm9dAfNjxsvx5zl3pe2oM2_MWn2wmxcDPC-nDAxOpaNVHaOxqli/exec?tag=' + t;
   if(+n > 0){
     url = url + "&n=" + n;
   }
   if(d==1){
     url = url + "&o=pdf";
+  }
+  else{
+    url = url + "&o=n";
   }
   if(a){
     url = url + "&m=all";
