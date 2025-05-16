@@ -23,8 +23,8 @@
             <input type="checkbox" id="E" name="E">
             Jenis soal essay
         </label><br><br>
-        <button type="button" onclick="submitForm(0)">Cari</button><br>
-	<label id="nres"></label><br>
+        <button type="button" id="cbtn" onclick="submitForm(0)">Cari</button><br><br>
+	<label id="nres"></label><br><br>
         <label for="n">Jumlah soal:</label>
         <input type="text" id="n" name="n"><br><br>
         <label>
@@ -37,6 +37,10 @@
 </p>
 </body>
 <script>
+function enbtns(e){
+  document.getElementById("dbtn").disabled=!e;
+  document.getElementById("cbtn").disabled=!e;
+}
 async function submitForm(d) {
   const t = document.getElementById('t').value;
   const n = document.getElementById('n').value;
@@ -48,10 +52,10 @@ async function submitForm(d) {
     alert("Tags harus diisi.");
     return;
   }
+  enbtns(false);
   var url = 'https://script.google.com/macros/s/AKfycbxDd2fQJchNG2RP82PW1BdAn0_GArMHX6aSrBZDWoTAvz48aj12Fi83lk3oJL6CJnPP/exec?tag=' + t.toLowerCase();
   if(d==1){
     document.getElementById('debugstr').innerText="File daftar soal akan bisa didownload dalam beberapa saat. Harap tunggu...";
-    document.getElementById('dbtn').disabled=true;
     url = url + "&o=pdf";
     if(+n > 0){
       url = url + "&n=" + n;
@@ -73,20 +77,21 @@ async function submitForm(d) {
   const hasil = await fetch(url,{redirect: "follow", method: "GET", headers: {"Content-Type": "text/plain;charset=utf-8"}});
   if(!hasil.ok){
     alert("Terjadi error.");
+    enbtns(true);
     return;
   }
   const data = await hasil.text();
   if(d==1){
     const link = document.createElement('a');
-	link.href = 'data:application/pdf;base64,' + data;
-	link.download = 'Daftarsoal.pdf';
-	link.click();
-    document.getElementById('debugstr').innerText="Permintaan sukses.";
-    document.getElementById("dbtn").disabled=false;
+  	link.href = 'data:application/pdf;base64,' + data;
+  	link.download = 'Daftarsoal.pdf';
+  	link.click();    
   }
   else{
     document.getElementById('debugstr').innerText="";
     document.getElementById('nres').innerText="Terkumpul " + data + " soal.";
   }
+  document.getElementById('debugstr').innerText="Permintaan sukses.";
+  enbtns(true);
 }
 </script>
