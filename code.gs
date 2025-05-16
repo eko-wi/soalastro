@@ -73,12 +73,41 @@ function readindexrecord(n, sheet){
     iend:record[0][5]
   };
 }
-function generateindex(){
+function generateindexfromtab(tabname,sheetname="") {
   //jelajahi isi tab database dan hasilkan index di gsheets "index"
-  const doc = getTabByName(databasetabname).asDocumentTab();
+  const maintab = getTabByName(databasetabname);
+  const childtabs=maintab.getChildTabs();
+  var datatab=null;
+  for(const t of childtabs){
+    if(t.getTitle()==tabname){
+      datatab=t;
+    }
+  }
+  if(datatab==null){
+    console.log("tabname not found");
+    return 0;
+  }
+  //const doc = getTabByName(tabname).asDocumentTab();
+  const doc = datatab.asDocumentTab();
   const body=doc.getBody(); 
   const indexSS = SpreadsheetApp.openById(indexdocID);
-  const indexsheet = indexSS.getSheetByName(indexsheetname);
+  var indexsheet;// = indexSS.getSheetByName(indexsheetname);
+  if(sheetname!=""){
+    //kalau menyebut nama sheet target, gunakan itu
+    //cek apa sudah ada sheet dengan nama itu, kalau sudah ada timpa, kalau belum ada add sheet
+    const sheets=indexSS.getSheets();
+    sheetnames = sheets.map(s=>s.getName());
+    console.log(sheetnames);
+    if(sheetnames.includes(sheetname)){
+      console.log("sheet "+sheetname+" sudah ada.");
+      indexsheet=indexSS.getSheetByName(sheetname);
+    }
+    else{
+      console.log("sheet "+sheetname+" tidak ada. Insert sheet...");
+      indexsheet=indexSS.insertSheet().setName(sheetname);
+      
+    }
+  }
   indexSS.setActiveSheet(indexsheet);
   //const outputdoc = getTabByName(indextabname).asDocumentTab();
   //const outputbody=outputdoc.getBody(); 
@@ -87,7 +116,7 @@ function generateindex(){
   let foundStart = false;
   //let ismatch=false;
   let titlestr="";
-  let ititle=-1, istarttext=-1, iendtext=-1;
+  let ititle=-1, istarttext=-1, iendtext=-1,isolusi=-1;
   let infostr="";
   let titleelement=null;
   let nmatches=0;
@@ -159,12 +188,31 @@ function generateindex(){
   }
   return nmatches;  
 }
-
-function retrievefromindex(indexpos, destbody, withsolution=false){
+function generateindex(){
+  return generateindexfromtab("database");
+}
+function retrievefromindex(indexpos,destbody,withsolution=false){
+  return retrievefromindexsheet(indexsheetname,indexpos,destbody,withsolution);
+}
+function retrievefromindexsheet(sheetname,indexpos, destbody, withsolution=false){
   //indexpos mulai dari 1
   const indexSS = SpreadsheetApp.openById(indexdocID);
-  const indexsheet = indexSS.getSheetByName(indexsheetname);
-  const doc = getTabByName(databasetabname).asDocumentTab();
+  const indexsheet = indexSS.getSheetByName(sheetname);
+  const maintab = getTabByName(databasetabname);
+  const childtabs=maintab.getChildTabs();
+  var datatab=null;
+  for(const t of childtabs){
+    if(t.getTitle()==sheetname){
+      datatab=t;
+    }
+  }
+  if(datatab==null){
+    console.log("tabname not found");
+    return 0;
+  }
+  //const doc = getTabByName(tabname).asDocumentTab();
+  const doc = datatab.asDocumentTab();
+  //const doc = getTabByName(databasetabname).asDocumentTab();
   const body=doc.getBody(); 
   //const indexdoc = getTabByName(indextabname).asDocumentTab();
   //const indexbody=indexdoc.getBody(); 
@@ -189,7 +237,9 @@ function retrievefromindex(indexpos, destbody, withsolution=false){
   }
   if (withsolution){
     const isolusi=indexrecord.isolusi;
-    destbody.appendParagraph('Solusi:').setAttributes(standardstyle);
+    destbody.appendParagraph('Solusi:')
+      .setAttributes(standardstyle)
+      .setTextAlignment(DocumentApp.TextAlignment.NORMAL);
     if(isolusi>0){
       destbody.appendParagraph(body.getChild(isolusi).copy());
     }
@@ -199,6 +249,7 @@ function retrievefromindex(indexpos, destbody, withsolution=false){
   }
   //append paragraph kosong
   destbody.appendParagraph('');
+  return 1; //sukses
 }
 function getTabByName(name){
   const tabs = DocumentApp.getActiveDocument().getTabs();
@@ -238,13 +289,23 @@ function copytab(dest, source){ //dest dan source adalah document body yang diam
   }
   return n;
 }
-
 function findfromtags(qtagstr, qinfo='', method='ANY',countonly=0){
+  //return: matches atau nmatches untuk tiap sheet dalam bentuk [{name:"namatab1", matches:...}]
+  //buat list nama sheet, lihat dari subtab
+  const maintab = getTabByName(databasetabname);
+  const childtabs=maintab.getChildTabs();
+  const tabnames=childtabs.map(t=>t.getTitle());
+  console.log("list tab/sheet:");
+  console.log(tabnames);
+  return tabnames.map(tn=>({name:tn, matches:findfromtagsinsheet(tn,qtagstr,qinfo,method,countonly)}));
+}
+function findfromtagsinsheet(sheetname,qtagstr, qinfo='', method='ANY',countonly=0){
   const indexSS = SpreadsheetApp.openById(indexdocID);
-  const indexsheet = indexSS.getSheetByName(indexsheetname);
+  //const indexsheet = indexSS.getSheetByName(indexsheetname);
+  const indexsheet = indexSS.getSheetByName(sheetname);
   indexSS.setActiveSheet(indexsheet);
   let nmatches=0;
-
+  console.log("Mencari di sheet: "+sheetname);
   //tag adalah string yang berisi beberapa kata yang dipisahkan koma
   const qtaglist=qtagstr.split(",");
 
@@ -278,9 +339,11 @@ function findfromtags(qtagstr, qinfo='', method='ANY',countonly=0){
     }
   }
   if(countonly==0){
+  console.log("hasil:"+matches);
     return matches;
   }
   else{
+  console.log("hasil:"+nmatches);
     return nmatches;
   }
 }
@@ -314,6 +377,23 @@ function getTabUrl(tabname){
     return DocumentApp.getActiveDocument().getUrl()+'?tab='+getTabByName(outputtabName).getId();
   }
 }
+function createpdffromtab(docid, tabid){
+  const url="https://docs.google.com/document/d/"+docid+"/export?format=pdf&tab="+tabid;
+  console.log(url);
+  const response = UrlFetchApp.fetch(url);
+  const blob = response.getBlob();
+  console.log('export selesai');
+  return blob;
+}
+function expandhasil(h){
+  //{name:"sheet1",matches:[1,3,5]} menjadi [{name:"sheet1",i:1},{name:'sheet1',i:3},{name:"sheet1",i:5}]
+  if(Array.isArray(h.matches)){
+    return h.matches.map(n=>({name:h.name,i:n}));
+  }
+  else{
+    return {name:h.name, i:h.matches};
+  }
+}
 function processRequest(e) {
   //serve text
   // https://developers.google.com/apps-script/guides/content
@@ -324,6 +404,7 @@ function processRequest(e) {
 
   //baca url parameters
   //var f = e.parameters['find'];
+  const doc = DocumentApp.getActiveDocument();
   var t = e.parameters['tag'];
   var m = e.parameters['m']; //methods, any atau all
   var tipesoal = e.parameters['t']; //'P' untuk PG atau 'E' untuk essay atau kosongkan untuk keduanya
@@ -358,7 +439,7 @@ function processRequest(e) {
     }
   }
   if(typeof(tipesoal)!=='undefined' && tipesoal.length>0){
-    tipesoal=f[0];
+    tipesoal=tipesoal[0];
   }
   else{
     tipesoal='';
@@ -391,23 +472,32 @@ function processRequest(e) {
       .setMimeType(ContentService.MimeType.TEXT); 
   }
   //===========analisis request selesai==============
-  console.log(keywords+','+tipesoal+','+method+','+count_only);
+  console.log(keywords+','+tipesoal+','+jumlahsoal+','+method+','+count_only);
   hasil=findfromtags(keywords,tipesoal,method,count_only); 
+  console.log("hasil pencarian keseluruhan:");
   console.log(hasil);
+  //flatten object
+  hasil=hasil.map(expandhasil).flat();
+  //console.log(hasil);
+  //return 0;
   //==============memulai output building============
-  const newdoc=DocumentApp.openById(outputdocID); //dokumen untuk publish export hasil
+  //const newdoc=DocumentApp.openById(outputdocID); //dokumen untuk publish export hasil
   //const newdoc=DocumentApp.openByUrl(outputdocURL); //dokumen untuk publish export hasil
   //const newdoc = DocumentApp.create("Daftar soal");
   var adahasil=false;
+  //output ke tab "output"
+  const outputtab = getTabByName(outputtabName);
+  const outputtabid = outputtab.getId();
+  const outputdoc = outputtab.asDocumentTab();
+  const outputbody=outputdoc.getBody();
   if(count_only==0 && hasil.length>0){
     //hasil berisi array of index entries
     adahasil=true;
-    //output ke tab "output"
-    const outputdoc = getTabByName(outputtabName).asDocumentTab();
-    const outputbody=outputdoc.getBody();
     outputbody.clear();
-    //randomize index entries
-    hasil.sort(()=>Math.random()-0.5);
+    //randomize index entries jika tidak ada kata kunci spesial "berurutan"
+    if(!(keywords.includes("berurutan"))){
+      hasil.sort(()=>Math.random()-0.5);
+    }
     if(jumlahsoal>0 && hasil.length>jumlahsoal){
       //perkecil ukurannya
       hasil=hasil.slice(0,jumlahsoal);
@@ -415,42 +505,69 @@ function processRequest(e) {
 
     //header dokumen: tags
     const p=outputbody.getChild(0).editAsText(); //paragraph pertama
-    p.appendText("Soal-soal dengan kata kunci: "+keywords+"\rJumlah soal: "+hasil.length);
-    p.setAttributes(standardstyle);
+    p.appendText("Soal-soal dengan kata kunci: "+keywords+"\rJumlah soal: "+hasil.length)
+      .setAttributes(standardstyle)
+      .setTextAlignment(DocumentApp.TextAlignment.NORMAL);
     outputbody.appendParagraph('');
     //ambil soal dari database dan taruh di tab output
 
-    hasil.forEach((i,idx,ar)=>{
-      outputbody.appendParagraph(String(idx+1)+'.').setAttributes(standardstyle);
-      retrievefromindex(i,outputbody,withsolution);
+    hasil.forEach((entry,idx,ar)=>{
+      outputbody.appendParagraph(String(idx+1)+'.')
+        .setAttributes(standardstyle)
+        .setTextAlignment(DocumentApp.TextAlignment.NORMAL);
+      //retrievefromindex(i,outputbody,withsolution);
+      retrievefromindexsheet(entry.name, entry.i, outputbody,withsolution);
       });
     //akhiran dokumen: waktu
-    outputbody.appendParagraph('');
+    outputbody.appendParagraph('')
+      .setAttributes(standardstyle)
+      .setTextAlignment(DocumentApp.TextAlignment.NORMAL);
     const nowtime = Date.now();
     const nowstr=new Date(nowtime).toString();
-    outputbody.appendParagraph("Disusun pada: " + nowstr + "\rOleh Bank Soal Astronomi").setAttributes(standardstyle);
+    outputbody.appendParagraph("Disusun pada: " + nowstr + "\rOleh Bank Soal Astronomi")
+      .setAttributes(standardstyle)
+      .setTextAlignment(DocumentApp.TextAlignment.NORMAL);
 
     //duplicate hasilnya ke document untuk export
-    const newbody=newdoc.getActiveTab().asDocumentTab();
-    copytab(newbody,getTabByName(outputtabName).asDocumentTab());
+    //const newbody=newdoc.getActiveTab().asDocumentTab();
+    //copytab(newbody,getTabByName(outputtabName).asDocumentTab());
   }
   if(outputtype=='pdf'){
     if(adahasil){
-      ss=newdoc.getBlob().getBytes();
+      /*
+      TODO: export satu tab saja https://webapps.stackexchange.com/questions/179905/how-can-i-prevent-a-tab-1-page-from-being-prepended-to-a-google-doc-exported-a
+      */
+      //ss=newdoc.getBlob().getBytes();
+      console.log("export pdf...");
+      doc.saveAndClose();
+      ss = createpdffromtab(doc.getId(),outputtabid)
+        .getBytes();
       //ss=newdoc.getAs('application/pdf').getBytes();
       //return ContentService.createTextOutput(Utilities.base64Encode(ss));
       outputstr=Utilities.base64Encode(ss);
+      console.log(outputstr.substring(0,100));
     }
     else{ //hasilnya kosong tapi diminta pdf... jawab dengan text. nanti script di user side yang menghandle
       outputstr="Error - tidak ditemukan soal yang memenuhi kriteria.";
     }
   }
   else if(outputtype=='n'){ //hasilnya pasti angka, 0 atau positif
-    outputstr=String(hasil);
+    //jumlahkan semua nmatches dari tiap sheet
+    var ntotal=0;
+    for(const h of hasil){
+      ntotal += h.i;
+    }
+    console.log("total: "+ntotal);
+    outputstr=String(ntotal);
   }
   else if(outputtype=='text'){
     if(count_only==0){ //kalau diminta soal-soalnya, berikan jumlahnya saja
-      hasil=hasil.length;
+      //hasil=hasil.length;
+      var ntotal=0;
+      for(const h of hasil){
+        ntotal += h.i;
+      }
+      hasil=ntotal;
     }
     if(hasil>0){
       outputstr = "Ditemukan " + hasil + " entry.\n";// + newdoc.getUrl();
@@ -460,6 +577,9 @@ function processRequest(e) {
     }
   }
   //if(contenttype=="data"){ //return output text berisi daftar soal yang diminta, kalau ada.
+//  return ContentService
+  //  .setHeader('Access-Control-Allow-Origin', '*')
+    //.setHeader('Access-Control-Allow-Methods', 'POST, GET')
   return ContentService
     .createTextOutput(outputstr)
     .setMimeType(ContentService.MimeType.TEXT);
@@ -471,14 +591,28 @@ function processRequest(e) {
 function doGet(e){
   return processRequest(e);
 }
+function updateindexfrommenu(){
+  const a = generateindex();
+  DocumentApp.getUi().alert("Index berhasil diupdate dengan "+ a + " entri soal.");
+}
+function updateindexfromcurrenttab(){
+  const tabname=DocumentApp.getActiveDocument().getActiveTab().getTitle();
+  generateindexfromtab(tabname,tabname);
+}
+function onOpen(e){
+  DocumentApp.getUi().createMenu("Run script").addItem("Update index","updateindexfromcurrenttab").addToUi();
+}
 function testfunction(){
   //const doc = getTabByName(outputtabName).asDocumentTab();
   //const destbody=doc.getBody();
   //destbody.clear();
   //retrievefromindex(6,destbody,true);
+  
   newrequest={
-    parameters:{"tag":["bulan"],"n":["5"],"o":["n"]}
+    parameters:{"tag":["bulan"],"n":["3"],"o":["pdf"]}
   };
   processRequest(newrequest);
+  
+  //console.log("index from tab: "+generateindexfromtab("OSK 2024","OSK 2024"));
 }
 
