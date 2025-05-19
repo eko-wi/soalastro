@@ -8,7 +8,7 @@
 <h1>Kumpulan Soal Astronomi</h1>
 <p>
 Masukkan kata kunci untuk mencari soal, misalnya: bulan, magnitudo, osk2024.<br>
-Gunakan kata kunci tambahan "berurutan" jika menginginkan hasilnya tidak diacak.<br>
+Jika "sesuai urutan" tidak dipilih, maka soal akan diacak.
 </p>
 <p>
     <form id="qform">
@@ -20,11 +20,15 @@ Gunakan kata kunci tambahan "berurutan" jika menginginkan hasilnya tidak diacak.
         </label><br>
         <label>
             <input type="checkbox" id="P" name="P">
-            Jenis soal PG
+            Jenis soal pilihan ganda atau pilihan ganda kompleks
         </label><br><br>
         <label>
             <input type="checkbox" id="E" name="E">
-            Jenis soal essay
+            Jenis soal isian atau essay
+        </label><br><br>
+        <label>
+            <input type="checkbox" id="U" name="U">
+            Sesuai urutan soal dalam database
         </label><br><br>
         <button type="button" id="cbtn" onclick="submitForm(0)">Cari</button><br><br>
 	<label id="nres"></label><br><br>
@@ -51,6 +55,7 @@ async function submitForm(d) {
   const E = document.getElementById('E').checked;
   const a = document.getElementById('a').checked;
   const S = document.getElementById('S').checked;
+  const U = document.getElementById('U').checked;
   if(t.trim()===''){
     alert("Tags harus diisi.");
     return;
@@ -76,6 +81,9 @@ async function submitForm(d) {
   }
   else if(E && !P){
     url = url + "&t=E";
+  }
+  if(U){
+    url = url + "&u=1";
   }
   const hasil = await fetch(url,{redirect: "follow", method: "GET", headers: {"Content-Type": "text/plain;charset=utf-8"}});
   if(!hasil.ok){
