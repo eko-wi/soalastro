@@ -44,7 +44,7 @@ Jika "sesuai urutan" tidak dipilih, maka soal akan diacak.
     </form>
 </p>
 <p>
-Mau menyampaikan sesuatu kepada admin? Gunakan <a href="https://forms.gle/8VXgsYkWeoqqRB7Y7">Form feedback</a>.
+Mau menyampaikan sesuatu kepada admin? Gunakan <a href="https://forms.gle/8VXgsYkWeoqqRB7Y7">Form feedback ini</a>.
 </p>
 </body>
 <script>
@@ -90,6 +90,9 @@ async function submitForm(d) {
   }
   if(U){
     url = url + "&u=1";
+  }
+  if(S){
+	url = url + "&s=1";
   }
   const hasil = await fetch(url,fprops);
   if(!hasil.ok){
